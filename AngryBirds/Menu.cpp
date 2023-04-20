@@ -18,7 +18,7 @@ Menu::Menu(float width, float height)
 	mainMenu[0].setFillColor(Color{ 255,204,0 });
 
 	//Instructions
-	mainMenu[1].setString("Instructions");
+	mainMenu[1].setString("History");
 	mainMenu[1].setCharacterSize(90);
 	mainMenu[1].setPosition(Vector2f(800, height / 4 + 200));
 	mainMenu[1].setFont(font);
