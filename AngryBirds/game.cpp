@@ -2,34 +2,43 @@
 #include <iostream>
 #include <ctime>
 #include "Menu.h"
-#include "Levels.h"
-#include "Pig.h"
 #include <fstream>
-
 using namespace std;
 using namespace sf;
-using std::ofstream;
-using std::ifstream;
+
+int pagenum = 1000;
+int score = 0, finalscore = 0, ymove = -25, cnt, level = 0, counta = 0;
+bool play = 0, startG1 = &play, startG2 = 0, startG3 = 0, startch1 = 0, startch2 = 0, startch3 = 0, chcounter = 0;
+
+void history(RenderWindow& window);
 
 struct player
 {
 	string name;
-	int points[3];
-};
+	int score = 0;
+}player;
 
-ifstream indata; //to the game
-ofstream outdata; // out of the game
+ifstream indata;
+ofstream outdata;
 
-int pagenum = 1000;
-int score = 0, finalscore = 0, ymove = -25, cnt;
 
 void Pname(RenderWindow& window, string& name);
 void gamePlay(RenderWindow& window);
-Levels levels;
-Pig pigs;
+void Blocks(Sprite Wood[]);
+void Pigs(Sprite Pig[]);
+void Blocks2(Sprite Wood2[]);
+void Pigs2(Sprite Pig2[]);
+void Blocks3(Sprite Wood3[]);
+void Pigs3(Sprite Pig3[]);
 
+int killed = 0;
+sf::SoundBuffer buffer;
+sf::Sound soundMenu;
 int main()
 {
+	buffer.loadFromFile("../assets/sound/theme.wav");
+	soundMenu.setBuffer(buffer);
+	soundMenu.play();
 	RenderWindow window(VideoMode(1920, 1080), "Game");
 	window.setFramerateLimit(30);
 	Menu menu(1920, 1080);
@@ -38,6 +47,7 @@ int main()
 	Sprite bg;
 	string name;
 	bg.setTexture(mainBackground);
+
 	while (true)
 	{
 
@@ -102,6 +112,10 @@ int main()
 		{
 			Pname(window, name);
 		}
+		if (pagenum == 1)
+		{
+			history(window);
+		}
 		if (pagenum == 3)
 		{
 			gamePlay(window);
@@ -123,26 +137,27 @@ void Pname(RenderWindow& window, string& name)
 	bg.setTexture(background);
 	Font font;
 	font.loadFromFile("../assets/fonts/angrybirds.ttf");
-	Text prompt, playerName;
-	prompt.setFont(font);
-	playerName.setFont(font);
-	prompt.setString("Enter Your Name: ");
-	prompt.setCharacterSize(70);
-	playerName.setCharacterSize(70);
-	prompt.setPosition(Vector2f(700, 1080 / 10));
-	playerName.setPosition(Vector2f(700, 1080 / 5));
-	prompt.setFillColor(Color{ 255,204,0 });
-	playerName.setFillColor(Color{ 255,204,0 });
+	Text t1, t2;
+	t1.setFont(font);
+	t2.setFont(font);
+	t1.setString("Enter Your Name: ");
+	t1.setCharacterSize(70);
+	t2.setCharacterSize(70);
+	t1.setPosition(Vector2f(700, 1080 / 10));
+	t2.setPosition(Vector2f(700, 1080 / 5));
+	t1.setFillColor(Color{ 255,204,0 });
+	t2.setFillColor(Color{ 255,204,0 });
 	while (window.isOpen())
 	{
-		Event event;
 
+		Event event;
 		while (window.pollEvent(event))
 		{
 			if (event.type == Event::Closed)
 			{
 				window.close();
 			}
+
 			if (event.type == Event::TextEntered)
 			{
 				//bazawed 3ala el string el 7arf el badakhalo
@@ -154,8 +169,9 @@ void Pname(RenderWindow& window, string& name)
 			}
 			if (Keyboard::isKeyPressed(Keyboard::Return) && name.size() > 1)
 			{
-				//game win
+				startG1 = 1;
 				pagenum = 3;
+				player.name = name;
 				return;
 			}
 			if (Keyboard::isKeyPressed(Keyboard::Escape))
@@ -165,21 +181,12 @@ void Pname(RenderWindow& window, string& name)
 				return;
 			}
 		}
+		t2.setString(name);
 
-
-
-
-
-
-
-
-
-
-		playerName.setString(name);
 		window.clear();
 		window.draw(bg);
-		window.draw(prompt);
-		window.draw(playerName);
+		window.draw(t1);
+		window.draw(t2);
 		window.display();
 	}
 
@@ -187,20 +194,20 @@ void Pname(RenderWindow& window, string& name)
 
 
 void gamePlay(RenderWindow& window) {
-
-	bool chooselv1 = false, chooselv2 = false, chooselv3 = false;
+	//pics
 	int count = 0;
-	Sprite arrs, arrl, map1s[2], map2s[2], map3s[2], lvl1s, lvl2s, lvl3s, lv1s, lv2s, lv3s, locks, win1s, win2s, win3s, loses, nexts;
-	Texture arr, arl, map1, map2, map3, lvl1, lvl2, lvl3, lv1, lv2, lv3, lock, win1, win2, win3, lose, next;
-	Clock clock1;
+	Sprite arrs, arrl, map1s[2], map2s[2], map3s[2], lvl1s, lvl2s, lvl3s, lv1s, lv2s, lv3s, locks, win1s, win2s, win3s, loses, nexts, losesIcon;
+	Texture arr, arl, map1, map2, map3, lvl1, lvl2, lvl3, lv1, lv2, lv3, lock, win1, win2, win3, lose, next, loseIcon;
+	bool choosechar1 = false, choosechar2 = false, choosechar3 = false, nex = 1, playagain = false, speed = 1, scale = 1;
+	bool chooselv1 = false, chooselv2 = false, chooselv3 = false, openlv3 = 0;
 
+	Clock clock1;
 	Texture red2, chuck2, terence2, bg2, l1, l2, l3, lock1;
 	Sprite red1, chuck1, terence1, bg1, lev1, lev2, lev3, locked, locked1;
 	Mouse mose;
 	RectangleShape pointer(Vector2f(1, 1));
 	pointer.setFillColor(Color::Black);
-	bool choosechar1 = false, choosechar2 = false, choosechar3 = false, nex = false;
-	//pics
+
 
 	if (win1.loadFromFile("../assets/pics/win1.png")) {
 		win1s.setTexture(win1);
@@ -237,6 +244,12 @@ void gamePlay(RenderWindow& window) {
 		nexts.setOrigin(nexts.getGlobalBounds().height / 2, nexts.getGlobalBounds().width / 2);
 	}
 
+	if (loseIcon.loadFromFile("../assets/pics/play again.png")) {
+		losesIcon.setTexture(loseIcon);
+		losesIcon.setPosition(Vector2f(win3s.getGlobalBounds().width / 2 + 680, 800));
+		losesIcon.setOrigin(losesIcon.getGlobalBounds().height / 2, losesIcon.getGlobalBounds().width / 2);
+	}
+
 	if (l1.loadFromFile("../assets/pics/level1,0.png")) {
 		lev1.setTexture(l1);
 		lev1.setPosition(Vector2f(200, 300));
@@ -259,6 +272,7 @@ void gamePlay(RenderWindow& window) {
 	if (lock.loadFromFile("../assets/pics/locked level.png")) {
 		locked.setTexture(lock);
 		locked.setPosition(Vector2f(500, 300));
+
 	}
 	if (lock1.loadFromFile("../assets/pics/locked level.png")) {
 		locked1.setTexture(lock1);
@@ -269,6 +283,8 @@ void gamePlay(RenderWindow& window) {
 	if (bg2.loadFromFile("../assets/pics/background.jpg")) {
 		bg1.setTexture(bg2);
 		bg1.setScale(1.5f, 1.f);
+
+
 	}
 
 	if (red2.loadFromFile("../assets/pics/RED.jpeg")) {
@@ -300,10 +316,12 @@ void gamePlay(RenderWindow& window) {
 		terencep.setScale(Vector2f(.5f, .5f));
 		terencep.setPosition(Vector2f(9900, 300));
 		terencep.setOrigin(terencep.getGlobalBounds().height / 2, terencep.getGlobalBounds().width / 2);
+
 	}
 
 	if (terence2.loadFromFile("../assets/pics/LOCKED TERENCE.jpeg")) {
 		terence1.setTexture(terence2);
+
 		terence1.setPosition(1650, 2000);
 		terence1.setOrigin(terence1.getGlobalBounds().height / 2, terence1.getGlobalBounds().width / 2);
 		terence1.setScale(.5, .5f);
@@ -320,6 +338,7 @@ void gamePlay(RenderWindow& window) {
 		lv1s.setTexture(lv1);
 		lv1s.setScale(Vector2f(.4, .4f));
 		lv1s.setPosition(Vector2f(850, 750));
+
 	}
 
 	if (lv2.loadFromFile("../assets/pics/level2icon.png")) {
@@ -333,7 +352,7 @@ void gamePlay(RenderWindow& window) {
 	if (lv3.loadFromFile("../assets/pics/level3icon.png")) {
 		lv3s.setTexture(lv3);
 		lv3s.setScale(Vector2f(.4f, .4f));
-		lv3s.setPosition(Vector2f(850, 750));
+		lv3s.setPosition(Vector2f(8540, 750));
 	}
 
 	if (lock.loadFromFile("../assets/pics/locked level.png")) {
@@ -348,26 +367,26 @@ void gamePlay(RenderWindow& window) {
 		arrl.setPosition(Vector2f(10, 300));
 	}
 
-	if (map1.loadFromFile("../assets/pics/lvl1.jpg"));
+	if (map1.loadFromFile("../assets/pics/lvl2.png"));
 	{
 		map1s[0].setTexture(map1);
-		map1s[0].setPosition(Vector2f(750, 650));
+		map1s[0].setPosition(Vector2f(790, 580));
 		map1s[0].setOrigin(map1s[0].getGlobalBounds().height / 2, map1s[0].getGlobalBounds().width / 2);
 
 		map1s[1].setTexture(map1);
-		map1s[1].setScale(1.6, 1.52);
+		map1s[1].setScale(.9f, .65f);
 
 
 	}
 
-	if (map2.loadFromFile("../assets/pics/lvl2.png"));
+	if (map2.loadFromFile("../assets/pics/lvl1.jpg"));
 	{
 		map2s[0].setTexture(map2);
-		map2s[0].setPosition(Vector2f(790, 580));
+		map2s[0].setPosition(Vector2f(750, 650));
 		map2s[0].setOrigin(map2s[0].getGlobalBounds().height / 2, map2s[0].getGlobalBounds().width / 2);
 
 		map2s[1].setTexture(map2);
-		map2s[1].setScale(.9f, .65f);
+		map2s[1].setScale(1.6f, 1.52f);
 	}
 
 	if (map3.loadFromFile("../assets/pics/lvl3.jpg"));
@@ -387,11 +406,10 @@ void gamePlay(RenderWindow& window) {
 	bg1.setPosition(-150, 0);
 	bg.setTexture(gpBackground);
 	bg1.setScale(1.62f, 1.229f);
-
 	//projectile
 	Texture cick;
 	cick.loadFromFile("../assets/pics/sprite.png");
-	Sprite bom[2];
+	Sprite bom[4];
 	bom[0].setTextureRect(IntRect(0, 0, 41, 200));
 	bom[0].setTexture(cick);
 	bom[0].setPosition(180, 520);
@@ -401,6 +419,16 @@ void gamePlay(RenderWindow& window) {
 	bom[1].setTexture(cick);
 	bom[1].setPosition(135, 515);
 	bom[1].setScale(1.7, 1.7);
+	//slingshoot3
+	bom[2].setTextureRect(IntRect(1691, 0, 60, 212));
+	bom[2].setTexture(cick);
+	bom[2].setPosition(185, 540);
+	bom[2].setScale(1.6, 1.6);
+
+	bom[3].setTextureRect(IntRect(1751, 1, 52, 127));
+	bom[3].setTexture(cick);
+	bom[3].setPosition(143, 535);
+	bom[3].setScale(1.3, 1.5);
 
 
 	//Ground
@@ -410,35 +438,29 @@ void gamePlay(RenderWindow& window) {
 	Font font;
 	font.loadFromFile("../assets/fonts/angrybirds.ttf");
 	Text text;
-	text.setFont(font);
-	text.setString("score : " + to_string(score));
-	text.setPosition(1570, 11);
-	text.setScale(2, 2);
-	text.setFillColor(Color(255, 255, 255));
-
-
 
 	//wood
 	Texture block;
 	block.loadFromFile("../assets/pics/wood.png");
 	Sprite Wood[3];
-	levels.initLevel1(Wood);
+	Blocks(Wood);
 	for (int i = 0; i < 3; i++) {
 		Wood[i].setTexture(block);
 	}
 
 	//wood2
-	Sprite Wood2[3];
-	levels.initLevel2(Wood2);
-	for (int i = 0; i < 3; i++) {
+	Sprite Wood2[5];
+	Blocks2(Wood2);
+	for (int i = 0; i < 5; i++) {
 		Wood2[i].setTexture(block);
 	}
 	//wood3
 	Sprite Wood3[5];
-	levels.initLevel3(Wood3);
+	Blocks3(Wood3);
 	for (int i = 0; i < 2; i++) {
 		Wood3[i].setTexture(block);
 	}
+
 	Texture block3;
 	block3.loadFromFile("../assets/pics/wood.png");
 	Texture Woods3;
@@ -449,12 +471,18 @@ void gamePlay(RenderWindow& window) {
 	TWood3.loadFromFile("../assets/pics/TkingWood.png");
 	Wood3[3].setTexture(TWood3);
 	Wood3[4].setTexture(TWood3);
+	RectangleShape line1(Vector2f(180, 5));
+	RectangleShape line2(Vector2f(180, 5));
+	line1.rotate(90 + 30);
+	line2.rotate(60);
+	line1.setPosition(1600, 283);
+	line2.setPosition(1780, 283);
 
 	//pig
 	Texture evil;
 	evil.loadFromFile("../assets/pics/AngryBirdsSpriteSheet.png");
 	Sprite Pig[3]/*(Vector2f(81,85))*/;
-	pigs.initPigs1(Pig);
+	Pigs(Pig);
 	for (int i = 0; i < 3; i++) {
 		Pig[i].setTexture(evil);
 
@@ -462,18 +490,26 @@ void gamePlay(RenderWindow& window) {
 
 	//pig2
 
-	Sprite Pig2[3];
-	pigs.initPigs2(Pig2);
-	for (int i = 0; i < 3; i++) {
+	Sprite Pig2[5];
+	Pigs2(Pig2);
+	for (int i = 0; i < 5; i++) {
 		Pig2[i].setTexture(evil);
 
 	}
 	//pig3
 	Sprite Pig3[3]/*(Vector2f(81,85))*/;
-	pigs.initPigs3(Pig3);
+	/*Pigs3(Pig3);
+	for (int i = 0; i < 3; i++) {
+		Pig3[i].setTexture(evil);
+	}*/
 	for (int i = 0; i < 3; i++) {
 		Pig3[i].setTexture(evil);
 	}
+	text.setFont(font);
+	text.setString("score : " + to_string(score));
+	text.setPosition(1570, 11);
+	text.setScale(2, 2);
+	text.setFillColor(Color(255, 255, 255));
 
 	//bird
 	//bird
@@ -485,7 +521,36 @@ void gamePlay(RenderWindow& window) {
 	red.setTextureRect(IntRect(200, 400, 500, 400));
 	red.setScale(0.155f, 0.155f);
 
-	// projectile varaibles
+	// chuck
+
+	Texture chuck_img;
+
+	chuck_img.loadFromFile("../assets/pics/chuck.png");
+
+	Sprite chuck;
+
+	chuck.setTexture(chuck_img);
+
+	chuck.setPosition(165, 570);
+
+	chuck.setScale(0.066, 0.066);
+
+
+	Texture ter_img;
+
+	ter_img.loadFromFile("../assets/pics/ter.png");
+
+	Sprite ter;
+
+	ter.setTexture(ter_img);
+
+	ter.setPosition(165, 570);
+
+	ter.setScale(0.14, 0.14);
+
+	float currentFrame = 0;
+
+	// projectile var
 
 	Clock clock;
 	float xAxis = 0, yAxis = 0, time, intialVelocityX = 0, intialVelocityY = 0, acc;
@@ -525,6 +590,7 @@ void gamePlay(RenderWindow& window) {
 	while (window.isOpen())
 	{
 		Event event;
+
 		pointer.setPosition(Vector2f(mose.getPosition().x - 10, mose.getPosition().y - 40));
 		if (pointer.getGlobalBounds().intersects(arrs.getGlobalBounds())) {
 			arrs.setScale(-1.1, 1.1);
@@ -549,62 +615,147 @@ void gamePlay(RenderWindow& window) {
 			arrl.setScale(1., 1.);
 		}
 		if (pointer.getGlobalBounds().intersects(lv1s.getGlobalBounds())) {
-			map1s[0].setScale(.9, .9);
-			if (Mouse::isButtonPressed(Mouse::Left) && count == 0)
+			map1s[0].setScale(.45, .42);
+			if (Mouse::isButtonPressed(Mouse::Left) && count == 0 && counta > 15) {
 				chooselv1 = true;
+				fly = red;
+				bird2.setTexture(birds);
+				chcounter = true;
+				startG1 = 0;
+				startG2 = 0;
+				startG3 = 0;
+				if (level == 0) {
+					startch1 = 1;
+				}
+				else if (level == 1) {
+					startch2 = 1;
+				}
+				else {
+					startch3 = 1;
+				}
+			}
 		}
 		else {
-			map1s[0].setScale(0.8, 0.8);
+			map1s[0].setScale(0.4, 0.38);
 		}
 		if (pointer.getGlobalBounds().intersects(nexts.getGlobalBounds())) {
 			nexts.setScale(1.3, 1.3);
-			if (Mouse::isButtonPressed(Mouse::Left) && score >= 3000)
+			if (Mouse::isButtonPressed(Mouse::Left) && score >= 3000) {
 				nex = true;
+				score = 0;
+				counta = 0;
+				//ymove = -25;
+				if (level == 2 || level == 3) {
+					startG3 = 1;
+				}
+				else {
+					startG2 = 1;
+				}
+				chooselv1 = 0; chooselv2 = 0; chooselv3 = 0; choosechar1 = 0; choosechar2 = 0; choosechar3 = 0;
+				startch1 = 0; startch2 = 0; startch3 = 0;
+			}
 		}
 		else {
 			nexts.setScale(1., 1.);
 		}
-		if (pointer.getGlobalBounds().intersects(lv2s.getGlobalBounds()) && count == 1 && nex == true) {
-			map2s[0].setScale(.45, .42);
+
+		if (pointer.getGlobalBounds().intersects(losesIcon.getGlobalBounds())) {
+			losesIcon.setScale(.7, .7);
+			if (Mouse::isButtonPressed(Mouse::Left) && score < 3000)
+				playagain = true;
+		}
+		else {
+			losesIcon.setScale(.6, .6);
+		}
+
+		if (pointer.getGlobalBounds().intersects(lv2s.getGlobalBounds()) && count == 1 && counta > 15) {
+			map2s[0].setScale(.9, .9);
 			if (Mouse::isButtonPressed(Mouse::Left)) {
 				chooselv2 = true;
+				killed = 0;
+				fly = chuck;
+				bird2.setTexture(birds);
+				chcounter = true;
+				startG1 = 0;
+				startG2 = 0;
+				startG3 = 0;
+				if (level == 0) {
+					startch1 = 1;
+				}
+				else if (level == 1) {
+					startch2 = 1;
+				}
+				else {
+					startch3 = 1;
+				}
 			}
 		}
 		else {
-			map2s[0].setScale(0.4, 0.38);
+			map2s[0].setScale(0.8, 0.8);
 		}
-		if (pointer.getGlobalBounds().intersects(lv3s.getGlobalBounds()) && count == 2 && nex == true
-			&& choosechar2 == true) {
+		if (pointer.getGlobalBounds().intersects(lv3s.getGlobalBounds()) && count == 2 && counta > 15) {
 			map3s[0].setScale(.9, .9);
 			if (Mouse::isButtonPressed(Mouse::Left)) {
-
 				chooselv3 = true;
+				killed = 0;
+				fly = chuck;
+				bird2 = ter;
+				chcounter = true;
+				startG1 = 0;
+				startG2 = 0;
+				startG3 = 0;
+				if (level == 0) {
+					startch1 = 1;
+				}
+				else if (level == 1) {
+					startch2 = 1;
+				}
+				else {
+					startch3 = 1;
+				}
+				openlv3 = 1;
 			}
 		}
 		else {
 			map3s[0].setScale(0.8, 0.8);
 		}
-
+		//cout << counta << endl;
 		if (pointer.getGlobalBounds().intersects(red1.getGlobalBounds()))
 		{
+
 			red1.setScale(.56, .56);
 			if (Mouse::isButtonPressed(Mouse::Left)) {
 				choosechar1 = true;
+				chcounter = false;
+				nex = false;
+				openlv3 = false;
+				startch1 = 0; startch2 = 0; startch3 = 0;
+				/*chooselv1 = chooselv2 = chooselv3 = 0;*/
 			}
 		}
 
-		if (chooselv1 == true) {
-			red1.setPosition(450, 300);
+		red1.setPosition(2000, 2000);
+		chuckp.setPosition(2000, 2000);
+		terencep.setPosition(2000, 2000);
+		if (startch1) {
+			red1.setPosition(550, 300);
 			chuck1.setPosition(1050, 300);
-			terence1.setPosition(1650, 300);
+			terence1.setPosition(1550, 300);
 		}
 
-		if (chooselv2 == true && nex == true) {
+		if (startch2) {
+			red1.setPosition(550, 300);
 			chuckp.setPosition(Vector2f(900, 200));
-
+			terence1.setPosition(Vector2f(1550, 300));
 		}
-		if (chooselv3 == true) {
-			terencep.setPosition(Vector2f(1500, 200));
+		if (startch3) {
+			red1.setPosition(550, 300);
+			chuckp.setPosition(Vector2f(900, 200));
+			terencep.setPosition(Vector2f(1400, 200));
+		}
+
+		if (level == 2 || level == 3) {
+			lv3s.setPosition(Vector2f(850, 750));
 		}
 
 		if (!pointer.getGlobalBounds().intersects(red1.getGlobalBounds())) {
@@ -616,6 +767,10 @@ void gamePlay(RenderWindow& window) {
 			if (Mouse::isButtonPressed(Mouse::Left)) {
 
 				choosechar2 = true;
+				chcounter = false;
+				nex = false;
+				openlv3 = false;
+				startch1 = 0; startch2 = 0; startch3 = 0;
 			}
 		}
 		if (!pointer.getGlobalBounds().intersects(chuckp.getGlobalBounds())) {
@@ -626,8 +781,11 @@ void gamePlay(RenderWindow& window) {
 			terencep.setScale(.56, .56);
 
 			if (Mouse::isButtonPressed(Mouse::Left)) {
-
 				choosechar3 = true;
+				chcounter = false;
+				nex = false;
+				openlv3 = false;
+				startch1 = 0; startch2 = 0; startch3 = 0;
 			}
 		}
 		if (!pointer.getGlobalBounds().intersects(terencep.getGlobalBounds())) {
@@ -643,6 +801,9 @@ void gamePlay(RenderWindow& window) {
 		{
 			if (event.type == Event::Closed)
 			{
+				outdata.open("history.txt", ios::app);
+				outdata << player.name << "               " << player.score << '*' << endl;
+				player.score = 0;
 				window.close();
 			}
 
@@ -667,7 +828,11 @@ void gamePlay(RenderWindow& window) {
 				Mouse::getPosition(window).x <= 300 &&
 				Mouse::getPosition(window).x >= 0 &&
 				Mouse::getPosition(window).y < 850 &&
-				Mouse::getPosition(window).y > 350) {
+				Mouse::getPosition(window).y > 350 &&
+				(choosechar1 || choosechar2 || choosechar3)
+				)
+
+			{
 
 				fly.setPosition(mouse);
 
@@ -678,7 +843,9 @@ void gamePlay(RenderWindow& window) {
 				increase = 0;
 
 				clock.restart();
+
 				clockRestart = 0;
+
 				xAxis = 190 - fly.getPosition().x, // old position - new position
 					yAxis = fly.getPosition().y - 570; // old position - new position but we reflect them because if we go down y axis value increase not such as x axis
 
@@ -726,35 +893,49 @@ void gamePlay(RenderWindow& window) {
 			}
 		}
 
+		if (openlv3) {
+			Pigs3(Pig3);
+			Blocks3(Wood3);
+			//ymove = -25;
+		}
 
 		//Bishoy
 		//Score++
-		for (int i = 0; i < 3; i++) {
-			if (fly.getGlobalBounds().intersects(Pig[i].getGlobalBounds())) {
-				score += 1000;
-				//Pig.setTextureRect(IntRect(444, 154, 119, 113));
+		if (chooselv1) {
+			//soundMenu.pause();
+			for (int i = 0; i < 3; i++) {
+				if (fly.getGlobalBounds().intersects(Pig[i].getGlobalBounds())) {
+					score += 1000;
+					//Pig.setTextureRect(IntRect(444, 154, 119, 113));
 
-				Pig[i].setScale(0, 0);
-				text.setString("score : " + to_string(score));
+					Pig[i].setScale(0, 0);
+					text.setString("score : " + to_string(score));
+					level = max(1, level);
+					player.score += score - killed * 1000;
+					killed++;
+				}
+				//cout << 1 << ': ' << killed << '\n';
 			}
 		}
-
 		//level2
-
-		if (choosechar2 == true && choosechar3 == false) {
-			for (int i = 0; i < 3; i++) {
+		if (chooselv2) {
+			for (int i = 0; i < 5; i++) {
 				if (fly.getGlobalBounds().intersects(Pig2[i].getGlobalBounds())) {
 					score += 1000;
 					//Pig.setTextureRect(IntRect(444, 154, 119, 113));
 
 					Pig2[i].setScale(0, 0);
 					text.setString("score : " + to_string(score));
+					level = max(2, level);
+					player.score += score - killed * 1000;
+					killed++;
+					//cout << 2 << ': ' << killed << '\n';
 				}
 			}
 		}
 
 		//level3
-		if (choosechar3 == true) {
+		if (chooselv3) {
 			for (int i = 0; i < 3; i++) {
 				if (fly.getGlobalBounds().intersects(Pig3[i].getGlobalBounds())) {
 					score += 1000;
@@ -762,11 +943,19 @@ void gamePlay(RenderWindow& window) {
 
 					Pig3[i].setScale(0, 0);
 					text.setString("score : " + to_string(score));
+					level = max(3, level);
+					player.score += (score - killed * 1000);
+					killed++;
+					//cout << 3 << ': ' << killed << '\n';
 				}
 			}
 		}
+		//ground
+		// besho
+		//Wood Collision level1
+
 		start = 0;
-		if (choosechar2 == false && choosechar3 == false) {
+		if (chooselv1) {
 			for (int i = 0; i < 3; i++) {
 				if (Wood[i].getGlobalBounds().intersects(fly.getGlobalBounds())) {
 					if (!Wood[i].getRotation()) {
@@ -793,8 +982,8 @@ void gamePlay(RenderWindow& window) {
 
 		//level2
 
-		if (choosechar2 == true && choosechar3 == false) {
-			for (int i = 0; i < 3; i++) {
+		if (chooselv2) {
+			for (int i = 0; i < 5; i++) {
 				if (Wood2[i].getGlobalBounds().intersects(fly.getGlobalBounds())) {
 					if (!Wood2[i].getRotation()) {
 						if (start == 0) {
@@ -818,24 +1007,45 @@ void gamePlay(RenderWindow& window) {
 		}
 
 		//level3
-		if (choosechar3 == true) {
+		if (chooselv3) {
 			for (int i = 0; i < 3; i++) {
 				if (Wood3[i].getGlobalBounds().intersects(fly.getGlobalBounds())) {
 					if (!Wood3[i].getRotation()) {
 						if (start == 0) {
 
 							if (intialVelocityY < 50) intialVelocityY = 5;
+
 							clock.restart();
+
 							intialVelocityX = intialVelocityX - intialVelocityX / 3;
+
 							if (intialVelocityX < 1) intialVelocityY = acc;
 						}
 						start = 1;
 					}
+
+
 				}
+				else if (line1.getGlobalBounds().intersects(fly.getGlobalBounds())
+
+					|| line2.getGlobalBounds().intersects(fly.getGlobalBounds())) {
+
+					if (start == 0) {
+
+						if (intialVelocityY < 50) intialVelocityY = 5;
+
+						clock.restart();
+
+						intialVelocityX = intialVelocityX - intialVelocityX / 3;
+
+						if (intialVelocityX < 1) intialVelocityY = acc;
+					}
+					start = 1;
+				}
+
 			}
 
 		}
-
 		// move bird
 
 		//ground
@@ -856,13 +1066,23 @@ void gamePlay(RenderWindow& window) {
 
 				if (intialVelocityX < 1) intialVelocityY = acc;
 			}
+
+
+
+
 			start = 1;
+
 		}
 
 		if (stop == 1)
 			fly.move(intialVelocityX, -intialVelocityY + acc);
-		if (choosechar3 == true) {
 
+
+
+		if (chooselv3 && (choosechar1 || choosechar2 || choosechar3)) {
+			if (score >= 3000) {
+				ymove = -25;
+			}
 			if (ymove == -25) {
 				cnt = -25;
 			}
@@ -875,20 +1095,43 @@ void gamePlay(RenderWindow& window) {
 			if (cnt == 25) {
 				ymove -= 1;
 			}
+
+			if (ymove != -25) {
+				Wood3[0].move(Vector2f(0.0, ymove));
+				Wood3[1].move(Vector2f(0, -ymove));
+				Pig3[0].move(Vector2f(0.0, +ymove));
+				Pig3[1].move(Vector2f(0.0, -ymove));
+			}
 		}
-		if (ymove != -25) {
-			Wood3[0].move(Vector2f(0.0, ymove));
-			Wood3[1].move(Vector2f(0, -ymove));
-			Pig3[0].move(Vector2f(0.0, +ymove));
-			Pig3[1].move(Vector2f(0.0, -ymove));
+
+		if (chcounter)
+			alternate = 0;
+		if ((chooselv2 || chooselv1 || chooselv3) && (choosechar2 || choosechar1 || choosechar3) && !nex && !score) {
+			if (!score) {
+				if (chooselv1)
+					Pigs(Pig);
+				else if (chooselv2)
+					Pigs2(Pig2);
+				text.setFont(font);
+				text.setString("score : " + to_string(score));
+				text.setPosition(1570, 11);
+				text.setScale(2, 2);
+				text.setFillColor(Color(255, 255, 255));
+			}
+		}
+		if (score >= 3000 && nex != true) {
+			finalscore = score;
+			text.setString("" + to_string(finalscore));
+			text.setFillColor(Color{ 255,234,20 });
+			text.setPosition(Vector2f(win3s.getGlobalBounds().width / 2 + 630, 600));
 
 		}
-
-
+		counta++;
 
 		window.clear();
 		window.draw(bg1);
-		if (chooselv1 == false) {
+		//maps
+		if (startG1) {
 			window.draw(arrl);
 			window.draw(arrs);
 			if (count == 0) {
@@ -904,64 +1147,9 @@ void gamePlay(RenderWindow& window) {
 				window.draw(locks);
 			}
 		}
-		if (chooselv1 == true && choosechar1 == false) {
-			window.draw(red1);
-			window.draw(chuck1);
-			window.draw(terence1);
-		}
 
-		if (choosechar1 == true && chooselv1 == true && finalscore < 3000) {
-
-			window.draw(map1s[1]);
-			//Bishoy
-			//draw wood
-			for (int i = 0; i < 3; i++) {
-
-				window.draw(Wood[i]);
-			}
-
-			//draw score
-			window.draw(text);
-			//draw pig
-			for (int i = 0; i < 3; i++) {
-				window.draw(Pig[i]);
-			}
-			window.draw(bom[0]);
-			if (alternate == 0) {
-				window.draw(bird2);
-				window.draw(bird3);
-				window.draw(bird4);
-			}
-			else if (alternate == 1) {
-
-				window.draw(bird3);
-				window.draw(bird4);
-			}
-			else if (alternate == 2) {
-				window.draw(bird4);
-			}
-			window.draw(fly);
-			window.draw(bom[1]);
-		}
-		if (score >= 3000 && nex != true)
-		{
-			window.draw(win3s);
-			window.draw(nexts);
-			finalscore = score;
-			text.setString("" + to_string(finalscore));
-			window.draw(text);
-			text.setFillColor(Color{ 255,234,20 });
-			text.setPosition(Vector2f(win3s.getGlobalBounds().width / 2 + 630, 600));
-
-		}
-
-		/*if (alternate == 3 && score < 3000 && nex != true&&intialVelocityX<=2&&fly.getPosition().x>200) {
-			window.draw(loses);
-			window.draw(nexts);
-		}*/
-
-		if (nex == true && chooselv2 == false) {
-			score = 0;
+		if (startG2) {
+			//score = 0;
 			window.draw(arrl);
 			window.draw(arrs);
 			if (count == 0) {
@@ -976,73 +1164,9 @@ void gamePlay(RenderWindow& window) {
 				window.draw(map3s[0]);
 				window.draw(locks);
 			}
-
 		}
-		if (chooselv2 == true && choosechar2 == false) {
-			nex = false;
-
-			window.draw(red1);
-
-			window.draw(chuckp);
-
-			window.draw(terence1);
-		}
-		if (choosechar2 == true && score < 3000 && chooselv3 == false) {
-			alternate = 0;
-			window.draw(map2s[1]);
-			//draw score
-			text.setString("score : " + to_string(score));
-			text.setPosition(1570, 11);
-			text.setScale(2, 2);
-			text.setFillColor(Color(255, 255, 255));
-			window.draw(text);
-
-			//draw pig
-
-			for (int i = 0; i < 3; i++) {
-				window.draw(Pig2[i]);
-			}
-			for (int i = 0; i < 3; i++) {
-
-				window.draw(Wood2[i]);
-			}
-
-			window.draw(bom[0]);
-
-			if (alternate == 0) {
-
-				window.draw(bird2);
-				window.draw(bird3);
-				window.draw(bird4);
-			}
-			else if (alternate == 1) {
-
-				window.draw(bird3);
-				window.draw(bird4);
-
-			}
-			else if (alternate == 2) {
-
-				window.draw(bird4);
-
-			}
-
-
-			window.draw(fly);
-			window.draw(bom[1]);
-		}
-		if (score >= 3000 && nex == false)
-		{
-			window.draw(win3s);
-			window.draw(nexts);
-			finalscore = score;
-			text.setString("" + to_string(finalscore));
-			window.draw(text);
-			text.setFillColor(Color{ 255,234,20 });
-			text.setPosition(Vector2f(win3s.getGlobalBounds().width / 2 + 630, 600));
-		}
-		if (nex == true && chooselv3 == false && choosechar2 == true) {
-			score = 0;
+		if (startG3) {
+			//	score = 0;
 			window.draw(bg1);
 			window.draw(arrl);
 			window.draw(arrs);
@@ -1059,25 +1183,65 @@ void gamePlay(RenderWindow& window) {
 				window.draw(lv3s);
 			}
 		}
-		if (chooselv3 == true && choosechar3 == false) {
+		//char
+
+		if (startch1) {
+
+
 			window.draw(red1);
-			window.draw(chuckp);
-			window.draw(terencep);
+
+			window.draw(chuck1);
+
+			window.draw(terence1);
+
+
 		}
-		if (choosechar3 == true && score < 3000) {
-			alternate = 0;
-			window.draw(map3s[1]);
-			//draw score
-			text.setString("score : " + to_string(score));
-			text.setPosition(1570, 11);
-			text.setScale(2, 2);
-			text.setFillColor(Color(255, 255, 255));
-			window.draw(text);
+
+		if (startch2) {
+
+			window.draw(red1);
+
+			window.draw(chuckp);
+
+			window.draw(terence1);
+
+			//restar birds
+
+			speed = 1;
+
+			killFly = 0;
+
+		}
+
+		if (startch3) {
+
+			window.draw(red1);
+
+			window.draw(chuckp);
+
+			window.draw(terencep);
+
+			bird2.setPosition(0 * 60, 820);
+
+			speed = 1;
+
+			scale = 1;
+
+			killFly = 0;
+
+
+		}
+		//lvls
+		if (chooselv1 == true && (choosechar1 || choosechar2 || choosechar3) && score < 3000 && !nex) {
+
+
+
+			window.draw(map1s[1]);
 			//Bishoy
 			//draw wood
-			for (int i = 4; i >= 0; i--) {
+			for (int i = 0; i < 3; i++) {
 
-				window.draw(Wood3[i]);
+				window.draw(Wood[i]);
 			}
 
 			//draw score
@@ -1086,7 +1250,60 @@ void gamePlay(RenderWindow& window) {
 			//draw pig
 
 			for (int i = 0; i < 3; i++) {
-				window.draw(Pig3[i]);
+				window.draw(Pig[i]);
+			}
+
+			window.draw(bom[0]);
+
+
+			if (alternate == 0) {
+
+				window.draw(bird2);
+				window.draw(bird3);
+				window.draw(bird4);
+			}
+			else if (alternate == 1) {
+
+				window.draw(bird3);
+				window.draw(bird4);
+
+			}
+			else if (alternate == 2) {
+
+				window.draw(bird4);
+
+			}
+
+
+			window.draw(fly);
+			window.draw(bom[1]);
+		}
+		if (score < 3000 && chooselv2 && (choosechar2 || choosechar1 || choosechar3) && !nex) {
+
+			if (alternate == 0) {
+
+				if (Mouse::isButtonPressed(Mouse::Left) && speed == 1 && fly.getPosition().x > 190) {
+
+					intialVelocityX = intialVelocityX * 1.8;
+
+					speed = 0;
+
+				}
+			}
+
+			window.draw(map2s[1]);
+			//draw score
+
+			window.draw(text);
+
+			//draw pig
+
+			for (int i = 0; i < 5; i++) {
+				window.draw(Pig2[i]);
+			}
+			for (int i = 0; i < 5; i++) {
+
+				window.draw(Wood2[i]);
 			}
 
 			window.draw(bom[0]);
@@ -1100,29 +1317,336 @@ void gamePlay(RenderWindow& window) {
 			else if (alternate == 1) {
 				window.draw(bird3);
 				window.draw(bird4);
+
 			}
 			else if (alternate == 2) {
+
 				window.draw(bird4);
+
 			}
+
+
 			window.draw(fly);
 			window.draw(bom[1]);
+		}
+
+		if (chooselv3 && score < 3000/*&&level ==3*/ && (choosechar2 || choosechar1 || choosechar3) && !nex) {
+
+			if (alternate == 0) {
+
+				if (Mouse::isButtonPressed(Mouse::Left) && speed == 1 && fly.getPosition().x > 190) {
+
+					intialVelocityX = intialVelocityX * 1.8;
+
+					speed = 0;
+
+				}
+
+			}
+
+
+			if (alternate == 1) {
+
+				if (Mouse::isButtonPressed(Mouse::Left) && scale == 1 && fly.getPosition().x > 190) {
+
+					fly.setScale(0.24, 0.24);
+
+					scale = 0;
+
+				}
+
+			}
+
+
+			window.draw(map3s[1]);
+
+			//draw score
+			//Bishoy
+			//draw wood
+			for (int i = 0; i < 3; i++) {
+				window.draw(Pig3[i]);
+			}
+			for (int i = 4; i >= 0; i--) {
+
+				window.draw(Wood3[i]);
+			}
+
+			//draw score
+			window.draw(text);
+
+			//draw pig
+
+
+			window.draw(bom[2]);
+
+			if (alternate == 0) {
+
+				window.draw(bird2);
+				window.draw(bird3);
+				window.draw(bird4);
+			}
+			else if (alternate == 1) {
+
+				window.draw(bird3);
+				window.draw(bird4);
+
+			}
+			else if (alternate == 2) {
+
+				window.draw(bird4);
+
+			}
+
+
+			window.draw(fly);
+			window.draw(bom[3]);
 
 		}
-		if (score >= 3000 && choosechar3 == true) {
+		//score
+		if (score >= 3000 && nex != true)
+		{
 			window.draw(win3s);
 			window.draw(nexts);
-			finalscore = score;
-			text.setString("" + to_string(finalscore));
-			text.setFillColor(Color{ 255,234,20 });
-			text.setPosition(Vector2f(win3s.getGlobalBounds().width / 2 + 630, 600));
+
 			window.draw(text);
 		}
 
-
-
-
+		if (alternate == 3 && (fly.getPosition().x > 1980 || (intialVelocityX < 2 && fly.getPosition().x > 200)) &&
+			score < 3000) {
+			window.draw(loses);
+			window.draw(losesIcon);
+		}
 
 		window.display();
 	}
 
+}
+
+void history(RenderWindow& window)
+{
+	Texture histortex;
+	histortex.loadFromFile("../assets/pics/background1.png");
+	Sprite historySprite;
+	historySprite.setTexture(histortex);
+	historySprite.setPosition(0, 0);
+
+	Text text[100];
+	Font font;
+	font.loadFromFile("../assets/fonts/angrybirds.ttf");
+	for (int i = 0; i < 40; i++)
+	{
+		text[i].setFont(font);
+		text[i].setCharacterSize(100);
+		text[i].setFillColor(Color::Black);
+	}
+	indata.open("history.txt", ios::in);
+
+	vector<string> lines;
+	string line;
+	while (getline(indata, line, '*'))
+	{
+		lines.push_back(line);
+	}
+	int length = lines.size();
+
+	for (int i = 0; i < length; i++)
+	{
+		text[i].setString(lines[i]);
+		text[i].setPosition(650, 100 * i);
+	}
+
+	while (window.isOpen())
+	{
+		Event event;
+		while (window.pollEvent(event))
+		{
+			if (event.type == Event::Closed)
+				window.close();
+
+
+			if (Keyboard::isKeyPressed(Keyboard::Escape))
+			{
+				pagenum = 1000;
+				return;
+			}
+
+			if (Keyboard::isKeyPressed(Keyboard::Key::Up))
+			{
+				if (text[0].getPosition().y <= 5)
+				{
+					for (int i = 0; i < length + 10 ; i++)
+					{
+						text[i].move(0, 20);
+					}
+				}
+			}
+
+			if (Keyboard::isKeyPressed(Keyboard::Key::Down))
+			{
+				if (text[length-1].getPosition().y >= window.getPosition().y + 1000)
+				{
+					for (int i = 0; i < length + 10; i++)
+					{
+						text[i].move(0, -20);
+					}
+				}
+				//cout << lines.size() << '\n';
+			}
+
+			window.clear();
+			window.draw(historySprite);
+			for (int i = 0; i < length; i++)
+			{
+				window.draw(text[i]);
+			}
+			window.display();
+		}
+	}
+
+}
+
+//Bishoy
+void Blocks(Sprite Wood[]) {
+
+	//1
+
+
+	Wood[0].setPosition(1200, 585);
+	Wood[0].setTextureRect(IntRect(253, 358, 83, 20));
+	Wood[0].setScale(1.5, 1);
+	Wood[0].setRotation(0);
+
+
+	//2
+
+
+	Wood[1].setPosition(1450, 698);
+	Wood[1].setTextureRect(IntRect(253, 358, 83, 20));
+	Wood[1].setScale(1.5, 1);
+	Wood[1].setRotation(0);
+
+
+
+	//3
+
+	Wood[2].setPosition(1600, 461);
+	Wood[2].setTextureRect(IntRect(253, 358, 83, 20));
+	Wood[2].setScale(1.5, 1);
+	Wood[2].setRotation(0);
+
+}
+
+void Pigs(Sprite Pig[]) {
+	//1 *score scale /5*
+	Pig[0].setPosition(1232, 522);
+	Pig[0].setTextureRect(IntRect(786, 569, 80, 85));
+	Pig[0].setScale(0.8, 0.8);
+	//2
+	Pig[1].setPosition(1482, 635);
+	Pig[1].setTextureRect(IntRect(786, 569, 80, 85));
+	Pig[1].setScale(0.8, 0.8);
+	//3
+	Pig[2].setPosition(1629, 398);
+	Pig[2].setTextureRect(IntRect(786, 569, 80, 85));
+	Pig[2].setScale(0.8, 0.8);
+}
+//ahmed
+void Blocks2(Sprite Wood2[]) {
+	//0
+	Wood2[0].setPosition(1140, 420);
+	Wood2[0].setTextureRect(IntRect(253, 358, 83, 20));
+	Wood2[0].setScale(1.3, 1);
+	Wood2[0].setRotation(0);
+	//1
+	Wood2[1].setPosition(1290, 520);
+	Wood2[1].setTextureRect(IntRect(253, 358, 83, 20));
+	Wood2[1].setScale(1.3, 1);
+	Wood2[1].setRotation(0);
+	//2
+	Wood2[2].setPosition(1447, 620);
+	Wood2[2].setTextureRect(IntRect(253, 358, 83, 20));
+	Wood2[2].setScale(1.3, 1);
+	Wood2[2].setRotation(0);
+	//3
+	Wood2[3].setPosition(1590, 520);
+	Wood2[3].setTextureRect(IntRect(253, 358, 83, 20));
+	Wood2[3].setScale(1.3, 1);
+	Wood2[3].setRotation(0);
+	//4
+	Wood2[4].setPosition(1740, 420);
+	Wood2[4].setTextureRect(IntRect(253, 358, 83, 20));
+	Wood2[4].setScale(1.3, 1);
+	Wood2[4].setRotation(0);
+}
+void Pigs2(Sprite Pig2[]) {
+	Pig2[0].setPosition(1158, 357);
+	Pig2[0].setTextureRect(IntRect(786, 569, 80, 85));
+	Pig2[0].setScale(0.8, 0.8);
+	//1
+	Pig2[1].setPosition(1308, 457);
+	Pig2[1].setTextureRect(IntRect(786, 569, 80, 85));
+	Pig2[1].setScale(0.8, 0.8);
+	//2
+	Pig2[2].setPosition(1458, 552);
+	Pig2[2].setTextureRect(IntRect(770, 482, 96, 88));
+	Pig2[2].setScale(0.8, 0.8);
+	//3
+	Pig2[3].setPosition(1608, 457);
+	Pig2[3].setTextureRect(IntRect(786, 569, 80, 85));
+	Pig2[3].setScale(0.8, 0.8);
+	//4
+	Pig2[4].setPosition(1758, 357);
+	Pig2[4].setTextureRect(IntRect(786, 569, 80, 85));
+	Pig2[4].setScale(0.8, 0.8);
+	//sling shoot
+
+}
+void Blocks3(Sprite Wood3[]) {
+
+
+	//1
+
+	Wood3[0].setPosition(1100, 450);
+	Wood3[0].setTextureRect(IntRect(253, 358, 83, 20));
+	Wood3[0].setScale(1, 1);
+	Wood3[0].setRotation(0);
+
+	//2
+
+	Wood3[1].setPosition(1350, 450);
+	Wood3[1].setTextureRect(IntRect(252, 358, 83, 22));
+	Wood3[1].setScale(1, 1);
+	Wood3[1].setRotation(0);
+
+	//3
+
+	Wood3[2].setPosition(1500, 450);
+	Wood3[2].setScale(0.3, 0.09);
+	Wood3[2].setRotation(0);
+
+	//triangle
+	Wood3[3].setPosition(1440, 243);
+	Wood3[3].setScale(0.07, 0.07);
+	Wood3[3].setRotation(0);
+
+	Wood3[4].setPosition(1945, 243);
+	Wood3[4].setScale(-0.07, 0.07);
+	Wood3[4].setRotation(0);
+
+
+}
+void Pigs3(Sprite Pig3[]) {
+	//1 *score scale /5*
+
+	Pig3[0].setPosition(1110, 387);
+	Pig3[0].setTextureRect(IntRect(786, 569, 80, 85));
+	Pig3[0].setScale(0.8, 0.8);
+	//2
+	Pig3[1].setPosition(1360, 387);
+	Pig3[1].setTextureRect(IntRect(786, 569, 80, 85));
+	Pig3[1].setScale(0.8, 0.8);
+	//3
+	Pig3[2].setPosition(1643, 330);
+	Pig3[2].setTextureRect(IntRect(40, 2, 128, 155));
+	Pig3[2].setScale(0.8, 0.8);
 }

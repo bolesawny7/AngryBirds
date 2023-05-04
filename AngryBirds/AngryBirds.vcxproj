@@ -152,16 +152,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="game.cpp" />
-    <ClCompile Include="Levels.cpp" />
     <ClCompile Include="Menu.cpp" />
-    <ClCompile Include="Pig.cpp" />
-    <ClCompile Include="Wood.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Levels.h" />
     <ClInclude Include="Menu.h" />
-    <ClInclude Include="Pig.h" />
-    <ClInclude Include="Wood.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="history.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
