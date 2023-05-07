@@ -7,8 +7,8 @@ using namespace std;
 using namespace sf;
 
 int pagenum = 1000;
-int score = 0, finalscore = 0, ymove = -25, cnt, level = 0, counta = 0;
-bool play = 0, startG1 = &play, startG2 = 0, startG3 = 0, startch1 = 0, startch2 = 0, startch3 = 0, chcounter = 0;
+int score = 0, finalscore = 0, ymove = -25, cnt, level = 0, counta = 0, playagainlv3 = 0;
+bool play = 0, startG1 = &play, startG2 = 0, startG3 = 0, startch1 = 0, startch2 = 0, startch3 = 0, chcounter = 0, clickplayagain = 0, selectlv3 = 0;
 
 void history(RenderWindow& window);
 
@@ -21,7 +21,9 @@ struct player
 ifstream indata;
 ofstream outdata;
 
-
+int i1 = 0;
+int slingshottime = 0;
+bool woodcrack, wooddest;
 void Pname(RenderWindow& window, string& name);
 void gamePlay(RenderWindow& window);
 void Blocks(Sprite Wood[]);
@@ -31,14 +33,59 @@ void Pigs2(Sprite Pig2[]);
 void Blocks3(Sprite Wood3[]);
 void Pigs3(Sprite Pig3[]);
 
-int killed = 0;
-sf::SoundBuffer buffer;
-sf::Sound soundMenu;
+SoundBuffer bufferMenu;
+SoundBuffer bufferfly;
+SoundBuffer bufferfly2;
+SoundBuffer bufferfly3;
+SoundBuffer bufferlevelPassed;
+SoundBuffer bufferSlingshot;
+SoundBuffer bufferWoodcrack;
+SoundBuffer bufferWooddestroy;
+SoundBuffer bufferlose;
+
+
+Sound soundMenu;
+Sound flying;
+Sound flying2;
+Sound flying3;
+Sound levelPassed;
+Sound slingshot;
+Sound woodcracked;
+Sound wooddestroyed;
+Sound losing;
+
+vector<string> lines;
+string line;
+
+
+
 int main()
 {
-	buffer.loadFromFile("../assets/sound/theme.wav");
-	soundMenu.setBuffer(buffer);
+
+	//buffers
+	bufferMenu.loadFromFile("../assets/sound/theme.wav");
+	bufferfly.loadFromFile("../assets/sound/flying.wav");
+	bufferfly2.loadFromFile("../assets/sound/flying2.wav");
+	bufferfly3.loadFromFile("../assets/sound/flying3.wav");
+	bufferlevelPassed.loadFromFile("../assets/sound/levelPassed.wav");
+	bufferSlingshot.loadFromFile("../assets/sound/slingshotStretch.wav");
+	bufferWoodcrack.loadFromFile("../assets/sound/wood1.wav");
+	bufferWooddestroy.loadFromFile("../assets/sound/wood11.wav");
+	bufferlose.loadFromFile("../assets/sound/lose.wav");
+
+	//sound
+	soundMenu.setBuffer(bufferMenu);
+	flying.setBuffer(bufferfly);
+	flying2.setBuffer(bufferfly2);
+	flying3.setBuffer(bufferfly3);
+	levelPassed.setBuffer(bufferlevelPassed);
+	slingshot.setBuffer(bufferSlingshot);
+	woodcracked.setBuffer(bufferWoodcrack);
+	wooddestroyed.setBuffer(bufferWooddestroy);
+	losing.setBuffer(bufferlose);
+
 	soundMenu.play();
+
 	RenderWindow window(VideoMode(1920, 1080), "Game");
 	window.setFramerateLimit(30);
 	Menu menu(1920, 1080);
@@ -170,7 +217,9 @@ void Pname(RenderWindow& window, string& name)
 			if (Keyboard::isKeyPressed(Keyboard::Return) && name.size() > 1)
 			{
 				startG1 = 1;
+				//game win
 				pagenum = 3;
+
 				player.name = name;
 				return;
 			}
@@ -181,6 +230,8 @@ void Pname(RenderWindow& window, string& name)
 				return;
 			}
 		}
+
+
 		t2.setString(name);
 
 		window.clear();
@@ -195,13 +246,13 @@ void Pname(RenderWindow& window, string& name)
 
 void gamePlay(RenderWindow& window) {
 	//pics
-	int count = 0;
+	int count = 0, esc = 0;;
 	Sprite arrs, arrl, map1s[2], map2s[2], map3s[2], lvl1s, lvl2s, lvl3s, lv1s, lv2s, lv3s, locks, win1s, win2s, win3s, loses, nexts, losesIcon;
 	Texture arr, arl, map1, map2, map3, lvl1, lvl2, lvl3, lv1, lv2, lv3, lock, win1, win2, win3, lose, next, loseIcon;
 	bool choosechar1 = false, choosechar2 = false, choosechar3 = false, nex = 1, playagain = false, speed = 1, scale = 1;
-	bool chooselv1 = false, chooselv2 = false, chooselv3 = false, openlv3 = 0;
+	bool chooselv1 = false, chooselv2 = false, chooselv3 = false, openlv3 = 0, dmg1 = 1, dmg2 = 1, bigpig = 0;
 
-	Clock clock1;
+	Clock clock1, clock2;
 	Texture red2, chuck2, terence2, bg2, l1, l2, l3, lock1;
 	Sprite red1, chuck1, terence1, bg1, lev1, lev2, lev3, locked, locked1;
 	Mouse mose;
@@ -246,7 +297,7 @@ void gamePlay(RenderWindow& window) {
 
 	if (loseIcon.loadFromFile("../assets/pics/play again.png")) {
 		losesIcon.setTexture(loseIcon);
-		losesIcon.setPosition(Vector2f(win3s.getGlobalBounds().width / 2 + 680, 800));
+		losesIcon.setPosition(Vector2f(win3s.getGlobalBounds().width / 2 + 6840, 800));
 		losesIcon.setOrigin(losesIcon.getGlobalBounds().height / 2, losesIcon.getGlobalBounds().width / 2);
 	}
 
@@ -344,7 +395,7 @@ void gamePlay(RenderWindow& window) {
 	if (lv2.loadFromFile("../assets/pics/level2icon.png")) {
 		lv2s.setTexture(lv2);
 		lv2s.setScale(Vector2f(.4f, .4f));
-		lv2s.setPosition(Vector2f(850, 750));
+		lv2s.setPosition(Vector2f(8540, 750));
 
 	}
 
@@ -443,6 +494,7 @@ void gamePlay(RenderWindow& window) {
 	Texture block;
 	block.loadFromFile("../assets/pics/wood.png");
 	Sprite Wood[3];
+	int h_wood[3] = { 200 , 200 , 200 };
 	Blocks(Wood);
 	for (int i = 0; i < 3; i++) {
 		Wood[i].setTexture(block);
@@ -451,12 +503,14 @@ void gamePlay(RenderWindow& window) {
 	//wood2
 	Sprite Wood2[5];
 	Blocks2(Wood2);
+	int h_wood2[5] = { 200 , 200 , 200 , 200 , 200 };
 	for (int i = 0; i < 5; i++) {
 		Wood2[i].setTexture(block);
 	}
 	//wood3
 	Sprite Wood3[5];
 	Blocks3(Wood3);
+	int h_wood3[3] = { 200 , 200 , 200 };
 	for (int i = 0; i < 2; i++) {
 		Wood3[i].setTexture(block);
 	}
@@ -476,13 +530,14 @@ void gamePlay(RenderWindow& window) {
 	line1.rotate(90 + 30);
 	line2.rotate(60);
 	line1.setPosition(1600, 283);
-	line2.setPosition(1780, 283);
+	line2.setPosition(1810, 283);
 
 	//pig
 	Texture evil;
 	evil.loadFromFile("../assets/pics/AngryBirdsSpriteSheet.png");
 	Sprite Pig[3]/*(Vector2f(81,85))*/;
 	Pigs(Pig);
+	int h_pig[3] = { 100 , 100 ,100 };
 	for (int i = 0; i < 3; i++) {
 		Pig[i].setTexture(evil);
 
@@ -492,6 +547,7 @@ void gamePlay(RenderWindow& window) {
 
 	Sprite Pig2[5];
 	Pigs2(Pig2);
+	int h_pig2[5] = { 100 , 100 , 200 , 100 , 100 };
 	for (int i = 0; i < 5; i++) {
 		Pig2[i].setTexture(evil);
 
@@ -502,6 +558,7 @@ void gamePlay(RenderWindow& window) {
 	for (int i = 0; i < 3; i++) {
 		Pig3[i].setTexture(evil);
 	}*/
+	int h_pig3[3] = { 100 , 100 , 300 };
 	for (int i = 0; i < 3; i++) {
 		Pig3[i].setTexture(evil);
 	}
@@ -512,13 +569,14 @@ void gamePlay(RenderWindow& window) {
 	text.setFillColor(Color(255, 255, 255));
 
 	//bird
+	int h_birds[4] = { 100 , 100 , 100 , 100 };
 	//bird
 	Texture bird;
 	bird.loadFromFile("../assets/pics/bird.png");
 	Sprite red;
 	red.setTexture(bird);
 	red.setPosition(165, 570);
-	red.setTextureRect(IntRect(200, 400, 500, 400));
+	//red.setTextureRect(IntRect(200, 400, 500, 400));
 	red.setScale(0.155f, 0.155f);
 
 	// chuck
@@ -544,9 +602,11 @@ void gamePlay(RenderWindow& window) {
 
 	ter.setTexture(ter_img);
 
-	ter.setPosition(165, 570);
+	ter.setPosition(1 * 60, 820);
 
 	ter.setScale(0.14, 0.14);
+
+	int h_ter = 200;
 
 	float currentFrame = 0;
 
@@ -557,7 +617,7 @@ void gamePlay(RenderWindow& window) {
 	bool stop = 0, clockRestart = 0, start;
 	// birds
 
-	int alternate = 0, kill = 1, killFly = 0, increase = 0;
+	int alternate = 0, kill = 1, killFly = 0, increase = 0, reload = 0;
 
 	Texture birds;
 	birds.loadFromFile("../assets/pics/bird.png");
@@ -570,19 +630,19 @@ void gamePlay(RenderWindow& window) {
 
 	bird2.setTexture(birds);
 	bird2.setPosition(0 * 60, 820);
-	bird2.setTextureRect(IntRect(200, 400, 500, 400));
+	//bird2.setTextureRect(IntRect(200, 400, 500, 400));
 	bird2.setScale(0.155f, 0.155f);
 
 
 	bird3.setTexture(birds);
 	bird3.setPosition(1 * 60, 820);
-	bird3.setTextureRect(IntRect(200, 400, 500, 400));
+	//bird3.setTextureRect(IntRect(200, 400, 500, 400));
 	bird3.setScale(0.155f, 0.155f);
 
 
 	bird4.setTexture(birds);
 	bird4.setPosition(2 * 60, 820);
-	bird4.setTextureRect(IntRect(200, 400, 500, 400));
+	//bird4.setTextureRect(IntRect(200, 400, 500, 400));
 	bird4.setScale(0.155f, 0.155f);
 
 
@@ -590,7 +650,13 @@ void gamePlay(RenderWindow& window) {
 	while (window.isOpen())
 	{
 		Event event;
-
+		if (Keyboard::isKeyPressed(Keyboard::Escape))
+		{
+			if (clock2.getElapsedTime().asSeconds() > 0.3) {
+				esc++;
+				clock2.restart();
+			}
+		}
 		pointer.setPosition(Vector2f(mose.getPosition().x - 10, mose.getPosition().y - 40));
 		if (pointer.getGlobalBounds().intersects(arrs.getGlobalBounds())) {
 			arrs.setScale(-1.1, 1.1);
@@ -616,11 +682,21 @@ void gamePlay(RenderWindow& window) {
 		}
 		if (pointer.getGlobalBounds().intersects(lv1s.getGlobalBounds())) {
 			map1s[0].setScale(.45, .42);
-			if (Mouse::isButtonPressed(Mouse::Left) && count == 0 && counta > 15) {
+			if (Mouse::isButtonPressed(Mouse::Left) && count == 0 && counta > 15 && !playagain) {
 				chooselv1 = true;
+				finalscore = 0;
+
+				soundMenu.pause();
+				bird3.setTexture(birds);
+				bird3.setPosition(1 * 60, 820);
+				//bird3.setTextureRect(IntRect(200, 400, 500, 400));
+				bird3.setScale(0.155f, 0.155f);
+
 				fly = red;
 				bird2.setTexture(birds);
+				//bird3 = red;
 				chcounter = true;
+				esc = 0;
 				startG1 = 0;
 				startG2 = 0;
 				startG3 = 0;
@@ -633,6 +709,7 @@ void gamePlay(RenderWindow& window) {
 				else {
 					startch3 = 1;
 				}
+
 			}
 		}
 		else {
@@ -640,8 +717,13 @@ void gamePlay(RenderWindow& window) {
 		}
 		if (pointer.getGlobalBounds().intersects(nexts.getGlobalBounds())) {
 			nexts.setScale(1.3, 1.3);
-			if (Mouse::isButtonPressed(Mouse::Left) && score >= 3000) {
+			if (Mouse::isButtonPressed(Mouse::Left) && ((score >= 3000 && chooselv1) || (score >= 6000 && chooselv2) || (score >= 7000 && chooselv3))) {
 				nex = true;
+				reload = 0;
+				esc = 0;
+				lv1s.setScale(Vector2f(.4, .4f));
+				lv2s.setScale(Vector2f(.4, .4f));
+				lv3s.setScale(Vector2f(.4, .4f));
 				score = 0;
 				counta = 0;
 				//ymove = -25;
@@ -653,28 +735,73 @@ void gamePlay(RenderWindow& window) {
 				}
 				chooselv1 = 0; chooselv2 = 0; chooselv3 = 0; choosechar1 = 0; choosechar2 = 0; choosechar3 = 0;
 				startch1 = 0; startch2 = 0; startch3 = 0;
+				count = 0;
 			}
 		}
 		else {
 			nexts.setScale(1., 1.);
 		}
+		if (esc == 2) {
+			lv1s.setScale(Vector2f(.4, .4f));
+			lv3s.setScale(Vector2f(.4, .4f));
+			score = 0;
+			ymove = -25;
+			if (level == 2 || level == 3) {
+				startG3 = 1;
+			}
+			else {
+				startG2 = 1;
+			}
+			chooselv1 = 0; chooselv2 = 0; chooselv3 = 0; choosechar1 = 0; choosechar2 = 0; choosechar3 = 0;
+			startch1 = 0; startch2 = 0; startch3 = 0;
+			openlv3 == 1;
+			reload = 0;
+
+		}
 
 		if (pointer.getGlobalBounds().intersects(losesIcon.getGlobalBounds())) {
 			losesIcon.setScale(.7, .7);
-			if (Mouse::isButtonPressed(Mouse::Left) && score < 3000)
+			if (Mouse::isButtonPressed(Mouse::Left) && ((score <= 3000 && chooselv1) || (score < 6000 && chooselv2) || (score < 7000 && chooselv3))
+				&& (choosechar1 || choosechar2 || choosechar3)) {
 				playagain = true;
+				reload = 0;
+				esc = 0;
+				bigpig = 1;
+				if (!chooselv1)
+					fly = chuck;
+				if (chooselv3)
+					fly = chuck;
+				score = 0;
+				alternate = 0;
+				chcounter = 0;
+				killFly = 0;
+				ymove = -25;
+				clickplayagain = 1;
+			}
 		}
 		else {
 			losesIcon.setScale(.6, .6);
 		}
-
+		if (clickplayagain)
+			playagainlv3++;
+		if (playagainlv3 > 6)
+			openlv3 = 1;
 		if (pointer.getGlobalBounds().intersects(lv2s.getGlobalBounds()) && count == 1 && counta > 15) {
 			map2s[0].setScale(.9, .9);
 			if (Mouse::isButtonPressed(Mouse::Left)) {
 				chooselv2 = true;
-				killed = 0;
+				i1 = 0;
+				finalscore = 0;
+				bird3.setTexture(birds);
+				bird3.setPosition(1 * 60, 820);
+				//bird3.setTextureRect(IntRect(200, 400, 500, 400));
+				bird3.setScale(0.155f, 0.155f);
+				esc = 0;
+				bigpig = 1;
+				reload = 0;
 				fly = chuck;
 				bird2.setTexture(birds);
+				//bird3 = red;
 				chcounter = true;
 				startG1 = 0;
 				startG2 = 0;
@@ -688,6 +815,7 @@ void gamePlay(RenderWindow& window) {
 				else {
 					startch3 = 1;
 				}
+
 			}
 		}
 		else {
@@ -697,9 +825,12 @@ void gamePlay(RenderWindow& window) {
 			map3s[0].setScale(.9, .9);
 			if (Mouse::isButtonPressed(Mouse::Left)) {
 				chooselv3 = true;
-				killed = 0;
+				finalscore = 0;
+				i1 = 0;
+				esc = 0;
+				bigpig = 1;
 				fly = chuck;
-				bird2 = ter;
+				bird3 = ter;
 				chcounter = true;
 				startG1 = 0;
 				startG2 = 0;
@@ -714,18 +845,23 @@ void gamePlay(RenderWindow& window) {
 					startch3 = 1;
 				}
 				openlv3 = 1;
+				selectlv3 = 1;
+
 			}
 		}
 		else {
 			map3s[0].setScale(0.8, 0.8);
 		}
-		//cout << counta << endl;
+
 		if (pointer.getGlobalBounds().intersects(red1.getGlobalBounds()))
 		{
 
 			red1.setScale(.56, .56);
 			if (Mouse::isButtonPressed(Mouse::Left)) {
 				choosechar1 = true;
+				lv1s.scale(0, 0);
+				lv2s.scale(0, 0);
+				lv3s.scale(0, 0);
 				chcounter = false;
 				nex = false;
 				openlv3 = false;
@@ -754,8 +890,12 @@ void gamePlay(RenderWindow& window) {
 			terencep.setPosition(Vector2f(1400, 200));
 		}
 
-		if (level == 2 || level == 3) {
+		if ((level == 2 || level == 3) && nex) {
 			lv3s.setPosition(Vector2f(850, 750));
+			lv2s.setPosition(Vector2f(850, 750));
+		}
+		if (level == 1 && nex) {
+			lv2s.setPosition(Vector2f(850, 750));
 		}
 
 		if (!pointer.getGlobalBounds().intersects(red1.getGlobalBounds())) {
@@ -767,6 +907,9 @@ void gamePlay(RenderWindow& window) {
 			if (Mouse::isButtonPressed(Mouse::Left)) {
 
 				choosechar2 = true;
+				lv1s.scale(0, 0);
+				lv2s.scale(0, 0);
+				lv3s.scale(0, 0);
 				chcounter = false;
 				nex = false;
 				openlv3 = false;
@@ -782,6 +925,9 @@ void gamePlay(RenderWindow& window) {
 
 			if (Mouse::isButtonPressed(Mouse::Left)) {
 				choosechar3 = true;
+				lv1s.scale(0, 0);
+				lv2s.scale(0, 0);
+				lv3s.scale(0, 0);
 				chcounter = false;
 				nex = false;
 				openlv3 = false;
@@ -801,6 +947,7 @@ void gamePlay(RenderWindow& window) {
 		{
 			if (event.type == Event::Closed)
 			{
+
 				outdata.open("history.txt", ios::app);
 				outdata << player.name << "               " << player.score << '*' << endl;
 				player.score = 0;
@@ -835,6 +982,21 @@ void gamePlay(RenderWindow& window) {
 			{
 
 				fly.setPosition(mouse);
+				int i = 0;
+				if (i == 0)
+				{
+					flying.play();
+					i++;
+				}
+
+				if (slingshottime == 0)
+				{
+					slingshot.play();
+					slingshottime++;
+				}
+				dmg1 = 1;
+
+				dmg2 = 1;
 
 				stop = 1;
 
@@ -865,91 +1027,281 @@ void gamePlay(RenderWindow& window) {
 				}
 
 				//return
-
 				if (fly.getPosition().x > 1920 || (intialVelocityX <= 2 && fly.getPosition().x > 200)) {
-
+					slingshottime = 0;
+					woodcrack = 0;
+					wooddest = 0;
 					if (alternate == 0) {
 
 						fly = bird2;
+
+						alternate++;
 
 					}
 					else if (alternate == 1) {
 
 						fly = bird3;
 
+						alternate++;
+
 					}
 					else {
 
-						fly = bird4;
+						if (chooselv3 && reload < 1) {
+
+							fly = bird2;
+
+							reload++;
+
+						}
+						else {
+
+							fly = bird4;
+
+							alternate++;
+						}
 					}
 
+
+					//aktb eh?
 					fly.setPosition(165, 570);
 
 					stop = 0;
-
-					alternate++;
+					//cout << alternate << endl;
 				}
 
 			}
 		}
 
-		if (openlv3) {
+		if (openlv3/*||(playagainlv3 < 5 && playagainlv3 > 0 && selectlv3 )*/) {
 			Pigs3(Pig3);
 			Blocks3(Wood3);
+			for (int i = 0; i < 2; i++) {
+				h_wood3[i] = 200;
+			}
+			h_pig3[2] = 300;
+			clickplayagain = 0;
+			playagainlv3 = 0;
+
+			openlv3 = 0;
 			//ymove = -25;
 		}
 
 		//Bishoy
 		//Score++
 		if (chooselv1) {
-			//soundMenu.pause();
+
 			for (int i = 0; i < 3; i++) {
 				if (fly.getGlobalBounds().intersects(Pig[i].getGlobalBounds())) {
+
 					score += 1000;
+					player.score += 1000;
+					if (dmg1 == 1) {
+
+						//Pig.setTextureRect(IntRect(444, 154, 119, 113));
+
+						h_pig[i] = h_pig[i] - h_birds[i];
+
+						if (h_pig[i] <= 0) {
+
+							Pig[i].setScale(0, 0);
+
+
+						}
+
+						//	dmg1 = 0;
+
+					}
+
+					text.setString("score : " + to_string(score));
+
+					level = max(1, level);
+				}
+			}
+
+			for (int i = 0; i < 3; i++) {
+				if (fly.getGlobalBounds().intersects(Wood[i].getGlobalBounds())) {
 					//Pig.setTextureRect(IntRect(444, 154, 119, 113));
 
-					Pig[i].setScale(0, 0);
-					text.setString("score : " + to_string(score));
-					level = max(1, level);
-					player.score += score - killed * 1000;
-					killed++;
+					if (dmg2 == 1) {
+
+						if (woodcrack == 0)
+						{
+							woodcracked.play();
+							woodcrack++;
+						}
+						h_wood[i] = h_wood[i] - h_birds[alternate];
+
+						if (h_wood[i] <= 0) {
+							if (wooddest == 0)
+							{
+								wooddestroyed.play();
+								wooddest++;
+							}
+							score += 140;
+							player.score += 140;
+							Wood[i].setScale(0, 0);
+
+						}
+						else {
+							Wood[i].setTextureRect(IntRect(335, 379, 84, 21));
+						}
+
+					}
+
+					dmg2 = 0;
+
 				}
-				//cout << 1 << ': ' << killed << '\n';
+				text.setString("score : " + to_string(score));
 			}
 		}
+
 		//level2
+
 		if (chooselv2) {
 			for (int i = 0; i < 5; i++) {
 				if (fly.getGlobalBounds().intersects(Pig2[i].getGlobalBounds())) {
-					score += 1000;
+					if (i != 2) {
+						score += 1000;
+						player.score += 1000;
+					}
+					if (i != 2)
+
+						Pig2[i].setScale(0, 0);
+
+					if (dmg1 == 1) {
+
+
+						//Pig.setTextureRect(IntRect(444, 154, 119, 113));
+
+						h_pig2[i] = h_pig2[i] - h_birds[i];
+
+						if (h_pig2[i] > 0) intialVelocityX = 0;
+
+						if (h_pig2[i] <= 0) {
+
+							Pig2[i].setScale(0, 0);
+
+						}
+
+						if (h_pig2[2] <= 0 && bigpig == 1) {
+							score += 2000;
+							player.score += 2000;
+							bigpig = 0;
+						}
+						dmg1 = 0;
+					}
+					text.setString("score : " + to_string(score));
+
+					level = max(2, level);
+				}
+			}
+
+			for (int i = 0; i < 5; i++) {
+				if (fly.getGlobalBounds().intersects(Wood2[i].getGlobalBounds())) {
 					//Pig.setTextureRect(IntRect(444, 154, 119, 113));
 
-					Pig2[i].setScale(0, 0);
-					text.setString("score : " + to_string(score));
-					level = max(2, level);
-					player.score += score - killed * 1000;
-					killed++;
-					//cout << 2 << ': ' << killed << '\n';
+					if (dmg2 == 1) {
+
+						if (woodcrack == 0)
+						{
+							woodcracked.play();
+							woodcrack++;
+						}
+
+						h_wood2[i] = h_wood2[i] - h_birds[alternate];
+
+						if (h_wood2[i] <= 0) {
+							score += 140;
+							player.score += 140;
+							Wood2[i].setScale(0, 0);
+						}
+						else
+						{
+							Wood2[i].setTextureRect(IntRect(335, 379, 84, 21));
+						}
+
+					}
+
+					dmg2 = 0;
+
 				}
+				text.setString("score : " + to_string(score));
 			}
 		}
 
 		//level3
 		if (chooselv3) {
+
+			h_birds[2] = 300;
 			for (int i = 0; i < 3; i++) {
 				if (fly.getGlobalBounds().intersects(Pig3[i].getGlobalBounds())) {
-					score += 1000;
-					//Pig.setTextureRect(IntRect(444, 154, 119, 113));
 
-					Pig3[i].setScale(0, 0);
+					if (i != 2)
+					{
+						score += 1000;
+						player.score += 1000;
+					}
+					if (i != 2)
+
+						Pig3[i].setScale(0, 0);
+
+					if (dmg1 == 1) {
+
+						//Pig.setTextureRect(IntRect(444, 154, 119, 113));
+						//h=300-
+						h_pig3[i] = h_pig3[i] - h_birds[alternate];
+
+						if (h_pig3[i] > 0) intialVelocityX = 0;
+
+						if (h_pig3[i] <= 0) {
+
+							Pig3[i].setScale(0, 0);
+
+						}
+						if (h_pig3[2] <= 0 && bigpig == 1) {
+							score += 5000;
+							player.score += 5000;
+							bigpig = 0;
+						}
+						dmg1 = 0;
+
+					}
 					text.setString("score : " + to_string(score));
 					level = max(3, level);
-					player.score += (score - killed * 1000);
-					killed++;
-					//cout << 3 << ': ' << killed << '\n';
 				}
 			}
+
+			for (int i = 0; i < 2; i++) {
+				if (fly.getGlobalBounds().intersects(Wood3[i].getGlobalBounds())) {
+					//Pig.setTextureRect(IntRect(444, 154, 119, 113));
+
+					if (dmg2 == 1) {
+
+						if (woodcrack == 0)
+						{
+							woodcracked.play();
+							woodcrack++;
+						}
+						h_wood3[i] = h_wood3[i] - h_birds[alternate];
+
+						if (h_wood3[i] <= 0) {
+							Wood3[i].setScale(0, 0);
+							score += 140;
+							player.score += 140;
+						}
+						else {
+							Wood3[i].setTextureRect(IntRect(335, 379, 84, 21));
+						}
+					}
+
+					dmg2 = 0;
+
+				}
+				text.setString("score : " + to_string(score));
+			}
 		}
+
 		//ground
 		// besho
 		//Wood Collision level1
@@ -1024,11 +1376,8 @@ void gamePlay(RenderWindow& window) {
 						start = 1;
 					}
 
-
 				}
-				else if (line1.getGlobalBounds().intersects(fly.getGlobalBounds())
-
-					|| line2.getGlobalBounds().intersects(fly.getGlobalBounds())) {
+				else if (line1.getGlobalBounds().intersects(fly.getGlobalBounds()) || line2.getGlobalBounds().intersects(fly.getGlobalBounds())) {
 
 					if (start == 0) {
 
@@ -1046,6 +1395,8 @@ void gamePlay(RenderWindow& window) {
 			}
 
 		}
+
+
 		// move bird
 
 		//ground
@@ -1077,10 +1428,8 @@ void gamePlay(RenderWindow& window) {
 		if (stop == 1)
 			fly.move(intialVelocityX, -intialVelocityY + acc);
 
-
-
 		if (chooselv3 && (choosechar1 || choosechar2 || choosechar3)) {
-			if (score >= 3000) {
+			if (score >= 7000) {
 				ymove = -25;
 			}
 			if (ymove == -25) {
@@ -1102,16 +1451,31 @@ void gamePlay(RenderWindow& window) {
 				Pig3[0].move(Vector2f(0.0, +ymove));
 				Pig3[1].move(Vector2f(0.0, -ymove));
 			}
+
 		}
 
-		if (chcounter)
+		if (chcounter) {
 			alternate = 0;
-		if ((chooselv2 || chooselv1 || chooselv3) && (choosechar2 || choosechar1 || choosechar3) && !nex && !score) {
+
+		}
+		if (((chooselv2 || chooselv1 || chooselv3) && (choosechar2 || choosechar1 || choosechar3) && !nex) || playagain) {
 			if (!score) {
-				if (chooselv1)
+				if (chooselv1) {
 					Pigs(Pig);
-				else if (chooselv2)
+					Blocks(Wood);
+					for (int i = 0; i < 3; i++) {
+						h_wood[i] = 200;
+					}
+				}
+				else if (chooselv2) {
 					Pigs2(Pig2);
+					Blocks2(Wood2);
+					h_pig2[2] = 200;
+					for (int i = 0; i < 5; i++) {
+						h_wood2[i] = 200;
+
+					}
+				}
 				text.setFont(font);
 				text.setString("score : " + to_string(score));
 				text.setPosition(1570, 11);
@@ -1119,19 +1483,74 @@ void gamePlay(RenderWindow& window) {
 				text.setFillColor(Color(255, 255, 255));
 			}
 		}
-		if (score >= 3000 && nex != true) {
+
+
+
+		if ((chooselv1) && score >= 3000) {
 			finalscore = score;
+			finalscore += (4 - alternate) * 2000;
+			if ((intialVelocityX < 2 && fly.getPosition().x > 200) || fly.getPosition().x > 1980) {
+				finalscore -= 2000;
+			}
 			text.setString("" + to_string(finalscore));
 			text.setFillColor(Color{ 255,234,20 });
 			text.setPosition(Vector2f(win3s.getGlobalBounds().width / 2 + 630, 600));
-
 		}
+		else if (chooselv2 && score >= 6000) {
+			finalscore = score;
+			finalscore += (4 - alternate) * 2000;
+			if ((intialVelocityX < 2 && fly.getPosition().x > 200) || fly.getPosition().x > 1980) {
+				finalscore -= 2000;
+			}
+			text.setString("" + to_string(finalscore));
+			text.setFillColor(Color{ 255,234,20 });
+			text.setPosition(Vector2f(win3s.getGlobalBounds().width / 2 + 630, 600));
+		}
+
+		else if (chooselv3 && score >= 7000) {
+			finalscore = score;
+
+			finalscore += (5 - (alternate + reload)) * 2000;
+			if ((intialVelocityX < 2 && fly.getPosition().x > 200) || fly.getPosition().x > 1980) {
+				finalscore -= 2000;
+			}
+			text.setString("" + to_string(finalscore));
+			text.setFillColor(Color{ 255,234,20 });
+			text.setPosition(Vector2f(win3s.getGlobalBounds().width / 2 + 630, 600));
+		}
+
 		counta++;
 
+		if (score < 3000 && (chooselv2 || chooselv3) && (choosechar2 || choosechar1 || choosechar3) && !nex) {
+
+			if (alternate == 0) {
+
+				if (Mouse::isButtonPressed(Mouse::Left) && speed == 1 && fly.getPosition().x > 190) {
+
+					intialVelocityX = intialVelocityX * 1.8;
+
+					speed = 0;
+
+					h_birds[0] = 200;
+
+				}
+			}
+			if (alternate == 2 && chooselv3) {
+
+				if (Mouse::isButtonPressed(Mouse::Left) && scale == 1 && fly.getPosition().x > 190) {
+
+					fly.setScale(0.24, 0.24);
+
+					scale = 0;
+
+				}
+
+			}
+		}
 		window.clear();
 		window.draw(bg1);
 		//maps
-		if (startG1) {
+		if (startG1 || esc == 2) {
 			window.draw(arrl);
 			window.draw(arrs);
 			if (count == 0) {
@@ -1148,8 +1567,9 @@ void gamePlay(RenderWindow& window) {
 			}
 		}
 
-		if (startG2) {
+		if (startG2 || (esc == 2 && (level == 1))) {
 			//score = 0;
+			//cout << level;
 			window.draw(arrl);
 			window.draw(arrs);
 			if (count == 0) {
@@ -1159,13 +1579,14 @@ void gamePlay(RenderWindow& window) {
 			if (count == 1) {
 				window.draw(map2s[0]);
 				window.draw(lv2s);
+
 			}
 			if (count == 2) {
 				window.draw(map3s[0]);
 				window.draw(locks);
 			}
 		}
-		if (startG3) {
+		if (startG3 || esc == 2) {
 			//	score = 0;
 			window.draw(bg1);
 			window.draw(arrl);
@@ -1182,6 +1603,33 @@ void gamePlay(RenderWindow& window) {
 				window.draw(map3s[0]);
 				window.draw(lv3s);
 			}
+		}
+
+		if (esc == 2 && level == 0)
+		{
+			if (count == 1)
+				window.draw(locks);
+			if (count == 2)
+				window.draw(locks);
+		}
+		if (esc == 2 && level == 1)
+		{
+			if (count == 1) {
+				lv2s.setPosition(Vector2f(850, 750));
+				lv2s.setScale(0.4, 0.4);
+				window.draw(lv2s);
+			}
+			if (count == 2)
+				window.draw(locks);
+		}
+		if (esc == 2 && level == 2)
+		{
+			if (count == 1) {
+				lv2s.setPosition(Vector2f(850, 750));
+				lv2s.setScale(0.4, 0.4);
+				window.draw(lv2s);
+			}
+
 		}
 		//char
 
@@ -1232,7 +1680,7 @@ void gamePlay(RenderWindow& window) {
 
 		}
 		//lvls
-		if (chooselv1 == true && (choosechar1 || choosechar2 || choosechar3) && score < 3000 && !nex) {
+		if ((chooselv1 == true && (choosechar1 || choosechar2 || choosechar3) && score < 3000 && !nex && esc != 2)/*||(chooselv1 && playagain)*/) {
 
 
 
@@ -1274,22 +1722,11 @@ void gamePlay(RenderWindow& window) {
 
 			}
 
-
+			playagain = 0;
 			window.draw(fly);
 			window.draw(bom[1]);
 		}
-		if (score < 3000 && chooselv2 && (choosechar2 || choosechar1 || choosechar3) && !nex) {
-
-			if (alternate == 0) {
-
-				if (Mouse::isButtonPressed(Mouse::Left) && speed == 1 && fly.getPosition().x > 190) {
-
-					intialVelocityX = intialVelocityX * 1.8;
-
-					speed = 0;
-
-				}
-			}
+		if (score < 6000 && chooselv2 && (choosechar2 || choosechar1 || choosechar3) && !nex && esc != 2) {
 
 			window.draw(map2s[1]);
 			//draw score
@@ -1324,13 +1761,12 @@ void gamePlay(RenderWindow& window) {
 				window.draw(bird4);
 
 			}
-
-
+			playagain = 0;
 			window.draw(fly);
 			window.draw(bom[1]);
 		}
 
-		if (chooselv3 && score < 3000/*&&level ==3*/ && (choosechar2 || choosechar1 || choosechar3) && !nex) {
+		if (chooselv3 && score < 7000/*&&level ==3*/ && (choosechar2 || choosechar1 || choosechar3) && !nex && esc != 2) {
 
 			if (alternate == 0) {
 
@@ -1340,16 +1776,20 @@ void gamePlay(RenderWindow& window) {
 
 					speed = 0;
 
+					h_birds[0] = 200;
+
 				}
 
 			}
 
 
-			if (alternate == 1) {
+			if (alternate == 2) {
 
 				if (Mouse::isButtonPressed(Mouse::Left) && scale == 1 && fly.getPosition().x > 190) {
 
 					fly.setScale(0.24, 0.24);
+
+					h_pig3[2] = 300;
 
 					scale = 0;
 
@@ -1387,6 +1827,7 @@ void gamePlay(RenderWindow& window) {
 			}
 			else if (alternate == 1) {
 
+				window.draw(bird2);
 				window.draw(bird3);
 				window.draw(bird4);
 
@@ -1397,30 +1838,143 @@ void gamePlay(RenderWindow& window) {
 
 			}
 
-
+			playagain = 0;
 			window.draw(fly);
 			window.draw(bom[3]);
 
 		}
 		//score
-		if (score >= 3000 && nex != true)
+		if (nex != true && chooselv1)
 		{
+			if (finalscore >= 3000 && finalscore < 3500)
+			{
+				if (i1 == 0)
+				{
+					levelPassed.play();
+					i1++;
+				}
+				window.draw(win1s);
+				window.draw(nexts);
+				window.draw(text);
+			}
+			if (finalscore >= 5000 && finalscore < 5500)
+			{
+				if (i1 == 0)
+				{
+					levelPassed.play();
+					i1++;
+				}
+				window.draw(win2s);
+				window.draw(nexts);
+				window.draw(text);
+			}
+			if (finalscore > 5500)
+			{
+				if (i1 == 0)
+				{
+					levelPassed.play();
+					i1++;
+				}
+				window.draw(win3s);
+				window.draw(nexts);
+				window.draw(text);
+			}
+		}
+
+		if (score >= 6000 && nex != true && chooselv2)
+		{
+			if (i1 == 0)
+			{
+				levelPassed.play();
+				i1++;
+			}
 			window.draw(win3s);
 			window.draw(nexts);
 
 			window.draw(text);
 		}
+		if (score >= 7000 && nex != true && chooselv3) {
+			if (finalscore >= 7000 && finalscore < 7500) {
+				if (i1 == 0)
+				{
+					levelPassed.play();
+					i1++;
+				}
+				window.draw(win1s);
+				window.draw(nexts);
+				window.draw(text);
+			}
 
-		if (alternate == 3 && (fly.getPosition().x > 1980 || (intialVelocityX < 2 && fly.getPosition().x > 200)) &&
-			score < 3000) {
+			if (finalscore >= 9000 && finalscore < 9500) {
+				if (i1 == 0)
+				{
+					levelPassed.play();
+					i1++;
+				}
+				window.draw(win2s);
+				window.draw(nexts);
+				window.draw(text);
+			}
+
+			if (finalscore > 9500) {
+				if (i1 == 0)
+				{
+					levelPassed.play();
+					i1++;
+				}
+				window.draw(win3s);
+				window.draw(nexts);
+				window.draw(text);
+			}
+		}
+
+		if (alternate == 3 && (fly.getPosition().x > 1980 || (intialVelocityX < 2 && fly.getPosition().x > 200)) && score < 3000 && chooselv1) {
+			losesIcon.setPosition(Vector2f(win3s.getGlobalBounds().width / 2 + 680, 800));
+			if (i1 == 0)
+			{
+				losing.play();
+				i1++;
+			}
 			window.draw(loses);
 			window.draw(losesIcon);
+		}
+
+		if (alternate == 3 && (fly.getPosition().x > 1980 || (intialVelocityX < 2 && fly.getPosition().x > 200)) && score < 6000 && chooselv2) {
+			losesIcon.setPosition(Vector2f(win3s.getGlobalBounds().width / 2 + 680, 800));
+			if (i1 == 0)
+			{
+				losing.play();
+				i1++;
+			}
+			window.draw(loses);
+			window.draw(losesIcon);
+		}
+
+		if (alternate == 3 && (fly.getPosition().x > 1980 || (intialVelocityX < 2 && fly.getPosition().x > 200)) && score < 7000 && chooselv3) {
+			losesIcon.setPosition(Vector2f(win3s.getGlobalBounds().width / 2 + 680, 800));
+			if (i1 == 0)
+			{
+				losing.play();
+				i1++;
+			}
+			window.draw(loses);
+			window.draw(losesIcon);
+		}
+		/*if ( bird4 && (fly.getPosition().x > 1980 || (intialVelocityX < 2 && fly.getPosition().x > 200)) && score < 7000 && chooselv3) {
+			losesIcon.setPosition(Vector2f(win3s.getGlobalBounds().width / 2 + 680, 800));
+			window.draw(loses);
+			window.draw(losesIcon);
+		}*/
+
+		if (alternate == 0 && playagain && speed == 1) {
+			alternate++;
 		}
 
 		window.display();
 	}
 
 }
+
 
 void history(RenderWindow& window)
 {
@@ -1441,8 +1995,6 @@ void history(RenderWindow& window)
 	}
 	indata.open("history.txt", ios::in);
 
-	vector<string> lines;
-	string line;
 	while (getline(indata, line, '*'))
 	{
 		lines.push_back(line);
@@ -1474,7 +2026,7 @@ void history(RenderWindow& window)
 			{
 				if (text[0].getPosition().y <= 5)
 				{
-					for (int i = 0; i < length + 10 ; i++)
+					for (int i = 0; i < length + 10; i++)
 					{
 						text[i].move(0, 20);
 					}
@@ -1483,7 +2035,7 @@ void history(RenderWindow& window)
 
 			if (Keyboard::isKeyPressed(Keyboard::Key::Down))
 			{
-				if (text[length-1].getPosition().y >= window.getPosition().y + 1000)
+				if (text[length - 1].getPosition().y >= window.getPosition().y + 800)
 				{
 					for (int i = 0; i < length + 10; i++)
 					{
@@ -1504,6 +2056,10 @@ void history(RenderWindow& window)
 	}
 
 }
+
+
+
+
 
 //Bishoy
 void Blocks(Sprite Wood[]) {
@@ -1621,7 +2177,7 @@ void Blocks3(Sprite Wood3[]) {
 	//3
 
 	Wood3[2].setPosition(1500, 450);
-	Wood3[2].setScale(0.3, 0.09);
+	Wood3[2].setScale(0.4, 0.09);
 	Wood3[2].setRotation(0);
 
 	//triangle
@@ -1629,7 +2185,7 @@ void Blocks3(Sprite Wood3[]) {
 	Wood3[3].setScale(0.07, 0.07);
 	Wood3[3].setRotation(0);
 
-	Wood3[4].setPosition(1945, 243);
+	Wood3[4].setPosition(1985, 243);
 	Wood3[4].setScale(-0.07, 0.07);
 	Wood3[4].setRotation(0);
 
@@ -1646,7 +2202,7 @@ void Pigs3(Sprite Pig3[]) {
 	Pig3[1].setTextureRect(IntRect(786, 569, 80, 85));
 	Pig3[1].setScale(0.8, 0.8);
 	//3
-	Pig3[2].setPosition(1643, 330);
+	Pig3[2].setPosition(1663, 330);
 	Pig3[2].setTextureRect(IntRect(40, 2, 128, 155));
 	Pig3[2].setScale(0.8, 0.8);
 }
